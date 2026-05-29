@@ -35,6 +35,8 @@ function Login() {
       );
 
       alert("Login successful");
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.user.role);
 
       navigate("/dashboard");
 

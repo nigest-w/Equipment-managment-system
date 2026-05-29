@@ -7,18 +7,28 @@ function Dashboard() {
   const [equipment, setEquipment] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [selectedEquipment, setSelectedEquipment] = useState("");
+  const [employees, setEmployees] = useState([]);
 
-
+  const [stats, setStats] = useState({
+  totalEquipment: 0,
+  available: 0,
+  assigned: 0,
+  totalAssignments: 0
+   });
   const [userId, setUserId] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
 
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
   useEffect(() => {
   fetchEquipment();
   fetchAssignments();
+  fetchStats();
+  fetchEmployees();
+
 }, []);
 
   // GET EQUIPMENT
@@ -63,8 +73,56 @@ function Dashboard() {
   }
 };
 
+const fetchStats = async () => {
+  try {
+    const equipmentRes = await axios.get(
+      "http://localhost:5000/api/equipment",
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    const assignmentRes = await axios.get(
+      "http://localhost:5000/api/assignments",
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    const equipment = equipmentRes.data;
+    const assignments = assignmentRes.data;
+
+    setStats({
+      totalEquipment: equipment.length,
+      available: equipment.filter(e => e.status === "available").length,
+      assigned: equipment.filter(e => e.status === "assigned").length,
+      totalAssignments: assignments.length
+    });
+
+  } catch (error) {
+    console.log(error);
+  }
+};
+const fetchEmployees = async () => {
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/api/users/employees",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    setEmployees(res.data);
+
+  } catch (error) {
+    console.log(error);
+  }
+};
 
   // ADD EQUIPMENT
+  
   const handleAddEquipment = async (e) => {
 
     e.preventDefault();
@@ -197,56 +255,87 @@ const handleReturnEquipment = async (
 
       </div>
 
+{/* DASHBOARD CARDS */}
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+
+  <div className="bg-white p-4 rounded shadow">
+    <h3 className="text-gray-500">Total Equipment</h3>
+    <p className="text-2xl font-bold">{stats.totalEquipment}</p>
+  </div>
+
+  <div className="bg-green-100 p-4 rounded shadow">
+    <h3 className="text-gray-600">Available</h3>
+    <p className="text-2xl font-bold text-green-700">
+      {stats.available}
+    </p>
+  </div>
+
+  <div className="bg-yellow-100 p-4 rounded shadow">
+    <h3 className="text-gray-600">Assigned</h3>
+    <p className="text-2xl font-bold text-yellow-700">
+      {stats.assigned}
+    </p>
+  </div>
+
+  <div className="bg-blue-100 p-4 rounded shadow">
+    <h3 className="text-gray-600">Assignments</h3>
+    <p className="text-2xl font-bold text-blue-700">
+      {stats.totalAssignments}
+    </p>
+  </div>
+
+</div>
+
       {/* ADD EQUIPMENT FORM */}
+{role === "admin" && (
 
-      <div className="bg-white p-6 rounded shadow mb-6">
+  <div className="bg-white p-6 rounded shadow mb-6">
 
-        <h2 className="text-xl font-bold mb-4">
-          Add Equipment
-        </h2>
+    <h2 className="text-xl font-bold mb-4">
+      Add Equipment
+    </h2>
 
-        <form
-          onSubmit={handleAddEquipment}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
+    <form
+      onSubmit={handleAddEquipment}
+      className="grid grid-cols-1 md:grid-cols-3 gap-4"
+    >
 
-          <input
-            type="text"
-            placeholder="Equipment Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border p-2 rounded"
-          />
+      <input
+        type="text"
+        placeholder="Equipment Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="border p-2 rounded"
+      />
 
-          <input
-            type="text"
-            placeholder="Type"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="border p-2 rounded"
-          />
+      <input
+        type="text"
+        placeholder="Type"
+        value={type}
+        onChange={(e) => setType(e.target.value)}
+        className="border p-2 rounded"
+      />
 
-          <input
-            type="text"
-            placeholder="Serial Number"
-            value={serialNumber}
-            onChange={(e) =>
-              setSerialNumber(e.target.value)
-            }
-            className="border p-2 rounded"
-          />
+      <input
+        type="text"
+        placeholder="Serial Number"
+        value={serialNumber}
+        onChange={(e) => setSerialNumber(e.target.value)}
+        className="border p-2 rounded"
+      />
 
-          <button
-            className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-          >
-            Add Equipment
-          </button>
+      <button className="bg-blue-600 text-white p-2 rounded">
+        Add Equipment
+      </button>
 
-        </form>
+    </form>
 
-      </div>
+  </div>
+
+)}
 
 {/* ASSIGN EQUIPMENT */}
+{role === "admin" && (
 
 <div className="bg-white p-6 rounded shadow mb-6">
 
@@ -288,15 +377,20 @@ const handleReturnEquipment = async (
 
     </select>
 
-    <input
-      type="number"
-      placeholder="Employee User ID"
-      value={userId}
-      onChange={(e) =>
-        setUserId(e.target.value)
-      }
-      className="border p-2 rounded"
-    />
+   <select
+  value={userId}
+  onChange={(e) => setUserId(e.target.value)}
+  className="border p-2 rounded"
+>
+  <option value="">Select Employee</option>
+
+  {employees.map(emp => (
+    <option key={emp.id} value={emp.id}>
+      {emp.name} ({emp.email})
+    </option>
+  ))}
+
+</select>
 
     <button
       className="bg-green-600 text-white p-2 rounded hover:bg-green-700"
@@ -307,7 +401,7 @@ const handleReturnEquipment = async (
   </form>
 
 </div>
-
+)}
       {/* EQUIPMENT TABLE */}
 
       <div className="bg-white shadow rounded overflow-hidden">

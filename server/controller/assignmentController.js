@@ -20,13 +20,25 @@ exports.assignEquipment = async (req, res) => {
       return res.status(400).json("Equipment not available");
     }
 
-    // 2. Create assignment
+    //3. check if no duplicate assignment
+    const existing = await pool.query(
+      "SELECT * FROM assignments WHERE equipment_id = $1 AND returned = false",
+      [equipment_id]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({
+        message: "Equipment already assigned"
+      });
+    }
+
+    // 3. Create assignment
     const assignment = await pool.query(
       "INSERT INTO assignments (equipment_id, user_id) VALUES ($1, $2) RETURNING *",
       [equipment_id, user_id]
     );
 
-    // 3. Update equipment status
+    // 4. Update equipment status
     await pool.query(
       "UPDATE equipment SET status = 'assigned' WHERE id = $1",
       [equipment_id]
