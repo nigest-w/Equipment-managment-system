@@ -3,6 +3,16 @@ const router = express.Router();
 const pool = require("../config/database");
 const authMiddleware = require("../middleware/authMiddleware");
 
+
+const { createEmployee } = require("../controller/userController");
+
+router.post(
+  "/employees",
+  authMiddleware,
+  createEmployee
+);
+
+
 // GET ALL EMPLOYEES
 router.get("/employees", authMiddleware, async (req, res) => {
   try {

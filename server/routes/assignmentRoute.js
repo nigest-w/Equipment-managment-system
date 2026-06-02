@@ -9,6 +9,7 @@ const {
   getAssignments,
   returnEquipment
 } = require("../controller/assignmentController");
+const adminMiddleware = require("../middleware/adminMiddleware");
 
 
 // ASSIGN
@@ -18,7 +19,7 @@ router.post("/", authMiddleware, assignEquipment);
 router.get("/", authMiddleware, getAssignments);
 
 // RETURN
-router.put("/return/:id", authMiddleware, returnEquipment);
+router.put("/return/:id", authMiddleware,adminMiddleware, returnEquipment);
 router.put(
   "/return/:id",
 authMiddleware,

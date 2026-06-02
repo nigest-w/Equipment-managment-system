@@ -8,13 +8,17 @@ function Dashboard() {
   const [assignments, setAssignments] = useState([]);
   const [selectedEquipment, setSelectedEquipment] = useState("");
   const [employees, setEmployees] = useState([]);
-
+  const [employeeName, setEmployeeName] = useState("");
+  const [employeeEmail, setEmployeeEmail] = useState("");
+  const [employeePassword, setEmployeePassword] = useState("");
   const [stats, setStats] = useState({
   totalEquipment: 0,
   available: 0,
   assigned: 0,
   totalAssignments: 0
    });
+
+
   const [userId, setUserId] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState("");
@@ -22,14 +26,17 @@ function Dashboard() {
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
+  
+ 
+useEffect(() => {
+  if (!token) return;
 
-  useEffect(() => {
   fetchEquipment();
   fetchAssignments();
   fetchStats();
   fetchEmployees();
+}, [token]);
 
-}, []);
 
   // GET EQUIPMENT
   const fetchEquipment = async () => {
@@ -103,6 +110,7 @@ const fetchStats = async () => {
     console.log(error);
   }
 };
+
 const fetchEmployees = async () => {
   try {
     const res = await axios.get(
@@ -165,6 +173,43 @@ const fetchEmployees = async () => {
     }
   };
 
+  const handleAddEmployee = async (e) => {
+  e.preventDefault();
+
+  try {
+
+    await axios.post(
+      "http://localhost:5000/api/users/employees",
+      {
+        name: employeeName,
+        email: employeeEmail,
+        password: employeePassword
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    alert("Employee Created");
+
+    setEmployeeName("");
+    setEmployeeEmail("");
+    setEmployeePassword("");
+
+    fetchEmployees();
+
+  } catch (error) {
+
+    console.log(error);
+
+    alert(
+      error.response?.data?.message ||
+      "Failed to create employee"
+    );
+  }
+};
 
 const handleAssignEquipment = async (e) => {
 
@@ -286,6 +331,62 @@ const handleReturnEquipment = async (
 
 </div>
 
+     {/* add employe */}
+
+{role === "admin" && (
+
+  <div className="bg-white p-6 rounded shadow mb-6">
+
+    <h2 className="text-xl font-bold mb-4">
+      Add Employee
+    </h2>
+
+    <form
+      onSubmit={handleAddEmployee}
+      className="grid grid-cols-1 md:grid-cols-4 gap-4"
+    >
+
+      <input
+        type="text"
+        placeholder="Name"
+        value={employeeName}
+        onChange={(e) =>
+          setEmployeeName(e.target.value)
+        }
+        className="border p-2 rounded"
+      />
+
+      <input
+        type="email"
+        placeholder="Email"
+        value={employeeEmail}
+        onChange={(e) =>
+          setEmployeeEmail(e.target.value)
+        }
+        className="border p-2 rounded"
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={employeePassword}
+        onChange={(e) =>
+          setEmployeePassword(e.target.value)
+        }
+        className="border p-2 rounded"
+      />
+
+      <button
+        className="bg-purple-600 text-white p-2 rounded"
+      >
+        Add Employee
+      </button>
+
+    </form>
+
+  </div>
+
+)}
       {/* ADD EQUIPMENT FORM */}
 {role === "admin" && (
 
@@ -366,30 +467,30 @@ const handleReturnEquipment = async (
         )
         .map((item) => (
 
-          <option
-            key={item.id}
-            value={item.id}
-          >
-            {item.name}
-          </option>
+          <option key={item.id} value={item.id}>
+  {item.name} | {item.type} | Serial: {item.serial_number}
+</option>
 
       ))}
 
     </select>
-
-   <select
+<select
   value={userId}
   onChange={(e) => setUserId(e.target.value)}
   className="border p-2 rounded"
 >
-  <option value="">Select Employee</option>
+  <option value="">
+    Select Employee
+  </option>
 
-  {employees.map(emp => (
-    <option key={emp.id} value={emp.id}>
-      {emp.name} ({emp.email})
+  {employees.map((employee) => (
+    <option
+      key={employee.id}
+      value={employee.id}
+    >
+      {employee.name} ({employee.email})
     </option>
   ))}
-
 </select>
 
     <button
@@ -462,6 +563,7 @@ const handleReturnEquipment = async (
       <tr>
         <th className="p-3">ID</th>
         <th className="p-3">Equipment</th>
+        <th className="p-3">serial Number</th>
         <th className="p-3">User</th>
         <th className="p-3">Assigned Date</th>
         <th className="p-3">Action</th>
@@ -482,6 +584,11 @@ const handleReturnEquipment = async (
 
           <td className="p-3">
             {item.equipment}
+          </td>
+
+
+          <td className="p-3">
+             {item.serial_number}
           </td>
 
           <td className="p-3">

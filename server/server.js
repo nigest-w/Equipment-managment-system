@@ -7,6 +7,8 @@ const equipmentRoutes = require("./routes/equipmentRoute");
 const assignmentRoutes = require("./routes/assignmentRoute");
 const userRoutes = require("./routes/userRoute");
 
+
+
 const app = express();
 
 app.use(cors());
